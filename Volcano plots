@@ -1,0 +1,46 @@
+library(ggplot2)
+library(ggrepel)
+data_P$Colour="none" # grey – see scale_color_manual below
+data_P$Colour[data_P[,"log2ratio:24h v 1h"]>=2 & data_P[,"p-val:24h v 1h"]<=0.01]="up1" # light green
+data_P$Colour[data_P[,"log2ratio:24h v 1h"]>=3 & data_P[,"p-val:24h v 1h"]<=0.01]="up2" # dark green
+data_P$Colour[data_P[,"log2ratio:24h v 1h"]<=-2 & data_P[,"p-val:24h v 1h"]<=0.01]="down1" # pink
+data_P$Colour[data_P[,"log2ratio:24h v 1h"]<=-3 & data_P[,"p-val:24h v 1h"]<=0.01]="down2" # red
+
+
+data_P$label_me = FALSE
+data_P$label_me[data_P[,"log2ratio:24h v 1h"]>=3 & data_P[,"p-val:24h v 1h"]<=0.01]=TRUE
+data_P$label_me[data_P[,"log2ratio:24h v 1h"]<=-3 & data_P[,"p-val:24h v 1h"]<=0.01]=TRUE
+
+
+p1 <- ggplot(data_P, aes(x = `log2ratio:24h v 1h`, y = -log10(`p-val:24h v 1h`))) +
+  geom_point(aes(color = Colour)) +
+  
+  # Define manual color scale with labels
+  scale_color_manual(
+    name = "Gene Expression",  # Title of the legend
+    values = c(
+      "down2" = "red",         # Downregulated (high significance)
+      "down1" = "pink",        # Downregulated (low significance)
+      "none" = "grey",         # Not significantly different
+      "up1" = "light green",   # Upregulated (low significance)
+      "up2" = "dark green"     # Upregulated (high significance)
+    ),
+    labels = c(
+      "down2" = "Highly Downregulated",
+      "down1" = "Moderately Downregulated",
+      "none" = "No Change",
+      "up1" = "Moderately Upregulated",
+      "up2" = "Highly Upregulated"
+    )
+  ) +
+
+  geom_text_repel(aes(label = ifelse(label_me, as.character(`Gene ID`), '')), hjust = 0, vjust = 0) +
+  ylab("-log10(p-value)") + 
+  xlab("log(expression ratio)") + 
+  theme_bw() + 
+  theme(
+    legend.position = "right",  # Position the legend to the right of the plot
+    legend.title = element_text(size = 10),  # Customize legend title size
+    legend.text = element_text(size = 8)     # Customize legend text size
+  )
+print(p1)
