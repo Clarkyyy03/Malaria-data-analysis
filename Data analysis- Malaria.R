@@ -36,4 +36,39 @@ gene_sets <- list(
 )
 overlap <- Reduce(intersect, gene_sets)
 write.table(overlap, file = "overlapping_genes.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
+
+
 #Further GO enrichment analysis
+getwd()
+library(ggplot2)
+library(data.table)
+go.enrich = fread("~/Desktop/data analysis/P.falciparum/gProfiler_pfalciparum_intersections.csv")
+go.enrich$term_name <- factor(go.enrich$term_name, 
+                              levels = c(
+                                setdiff(go.enrich$term_name, c("adhesion of symbiont to microvasculature", 
+                                                               "cell adhesion molecule binding", 
+                                                               "host cell cytoplasm", 
+                                                               "membrane")), 
+                                "adhesion of symbiont to microvasculature", 
+                                "cell adhesion molecule binding", 
+                                "host cell cytoplasm", 
+                                "membrane"))
+ggplot(go.enrich, aes(x = -log10(adjusted_p_value), y = term_name, size = intersection_size, color = highlighted)) + 
+  geom_point() +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "grey")) +  # Set colors for TRUE and FALSE
+  theme_bw() +
+  labs(
+    title = "GO Enrichment Analysis",
+    x = "-log10(Adjusted P-value)",
+    y = "GO Terms",
+    size = "Intersection Size",
+    color = "Highlighted"
+  )
+
+
+## Heatmap - 105 overlapped genes
+tmp = go.enrich %>% filter(highlighted==TRUE) %>% separate_rows("intersections", sep = ",")
+genelist = unique(tmp$intersections)
+
+mat1 = d1 %>% filter(`Gene ID` %in% genelist) %>% column_to_rownames(var="Gene ID") %>% select("percent abundance 1h","percent abundance 24h","percent abundance 7d")
+pheatmap(mat1, scale = "row", cluster_cols = F)
